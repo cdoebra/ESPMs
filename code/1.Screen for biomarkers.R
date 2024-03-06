@@ -1,6 +1,10 @@
 #-------------------------------suvival analysis---------------------------------------------------
 cancer=c("HNSC","LIHC","LUAD","LUSC")
 set.seed(2023)
+#install.packages("tidyverse")
+#install.packages("survival")
+#install.packages("dplyr")
+#install.packages("stringr")
 library(tidyverse)
 library(survival)
 library(dplyr)
@@ -17,13 +21,14 @@ for (i in 1:length(cancer)){
     gene_exprs <- as.data.frame(t(gene_exprs))
     gene_exprs[,1] <- as.numeric(gene_exprs[,1])
     x<-gene_exprs[,1]
-    
+    ###quartile grouping
     gene_exprs$g <- 
-      ifelse(x>quantile(x,.75),"high",ifelse(x>quantile(x,.5),"Q2",ifelse(x>quantile(x,.25),"Q3","low")))  ###以四分位数分组
+      ifelse(x>quantile(x,.75),"high",ifelse(x>quantile(x,.5),"Q2",ifelse(x>quantile(x,.25),"Q3","low")))  
     gene_surv <- t
     gene_surv <- merge(gene_surv,gene_exprs,by.x="case_submitter_id",by.y = "row.names")
     colnames(gene_surv)[1]<-c("Patient")
-    gene_surv<-gene_surv %>%filter(g %in% c("high","low")) ###选取分组内的样本生存信息
+    gene_surv<-gene_surv %>%filter(g %in% c("high","low")) 
+    ###cox proportional-hazards model
     if ("high" %in% gene_surv$g && "low" %in% gene_surv$g){
       try({
         fit<-coxph(Surv(gene_surv$suvival_month,gene_surv$vital_status=="Dead")~gene_surv$g,data = gene_surv)
@@ -35,6 +40,7 @@ for (i in 1:length(cancer)){
   write.table(gt,paste("./Survival genes/TCGA_",cancer[i],"_5_suvivalgene_coxph_quartile.txt",sep = ""),sep='\t',quote = FALSE,row.names = TRUE)
 }
 
+#Screening for significant survival-related genes
 #------------------------------p0.05------------------------------------------------------------------
 cancer1=c("LUSC")
 for (i in 1:length(cancer1)){
@@ -59,7 +65,8 @@ for (i in 1:length(cancer4)){
 }
 
 
-#------------------------------------Evolution information------------------------------------------#
+#------------------------Screening for potential oncology biomarkers with evolutionary features-------------------------------
+#loading evolution information
 oh<-read.table("./Evolution information/Ohnologs_all_gene_ensg_gene-name.txt",sep = "\t",header = T,check.names = F)
 stage<-read.table("./Evolution information/main_HUMAN-gene-name.txt",sep = "\t",header = F,check.names = F)
 stage<-stage[stage$V2 %in% c("Eukaryota","Opisthokonta","Eumetazoa"),]

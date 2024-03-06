@@ -1,11 +1,15 @@
 #----------------------------------------------------Predict model--------------------------------------------#
+#This model requires the use of python in the R language
+#Calling python
 library(reticulate)
 use_condaenv("/home/anaconda3/envs/zzw_envs/",required=T)
+#neural networks APl
 library(keras)
-library(DeepCC)
 library(pROC)
 library(caret)
 library(ROCR)
+
+#callback function for neural networks
 earlystopping <- keras::callback_early_stopping(monitor = 'val_loss',
                                                 mode = 'min' ,
                                                 patience =10,
@@ -17,6 +21,7 @@ checkpoint    <- keras::callback_model_checkpoint("./best_weights.hdf5",
                                                   save_best_only=T,
                                                   verbose = 0)
 callback_list <- list(earlystopping,checkpoint)
+#neural network parameters
 train_ANN_model <- function(trainData, trainLabels, epochs = 100, dropout = 0.4, activation_func = "selu", validation_split = 0.1){
   ind <- !is.na(trainLabels)
   x_train <- trainData[ind, ]
@@ -87,6 +92,8 @@ get_predict_prob <- function(ANNmodel, newData){
   pre
 }
 '---------------------------------EVO-------------------------------------'
+
+#Training evolutionary models
 cancer=c("HNSC","LIHC","LUAD","LUSC")
 for (m in 1:length(cancer)){ 
 evo<-paste("./Input_features/",cancer[m],"/",cancer[m],"_exp_best_feature_mean.csv",sep="")
@@ -110,6 +117,7 @@ for (i in 1:100) {
   tensorflow::set_random_seed(3690)
   ANN_model <- train_ANN_model(fs, labels)
   pred<-get_predict_prob(ANN_model,new_fs)
+  #Model performance evaluation metrics
   gt[i,1]<-as.numeric(auc(new_labels,pred[,2]))
   pred.class <- as.integer(pred[,2] > 0.5)
   cft <-confusionMatrix(as.factor(pred.class), as.factor(new_labels), positive = "1")
@@ -131,6 +139,7 @@ for (i in 1:100) {
 }
 #write.table(gt,paste(cancer[m],"/",cancer[m],"_5_results.txt",sep=""),row.names = F,quote=F,sep="\t")
 ################-------------------------------NON-EVO---------------------------------##################
+#Training non-evolutionary models
 nonevos <- Sys.glob(nonevo)
 result<-as.data.frame(matrix("",5,2))
 gt<-as.data.frame(array(,dim=c(500,6)))
@@ -153,7 +162,7 @@ for (j in seq_along(nonevos)){
       new_fs<-as.matrix(tcga_test)
       tensorflow::set_random_seed(3690)
       ANN_model <- train_ANN_model(fs, labels)
-      pred<-get_DeepCC_prob(ANN_model,new_fs)
+      pred<-get_predict_prob(ANN_model,new_fs)
       gt[100*(j-1)+i,1]<-as.numeric(auc(new_labels,pred[,2]))
       pred.class <- as.integer(pred[,2] > 0.5)
       cft <-confusionMatrix(as.factor(pred.class), as.factor(new_labels), positive = "1")

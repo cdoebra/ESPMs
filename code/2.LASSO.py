@@ -18,8 +18,8 @@ def cancer_LASSO(n,g):
     lasso_cv.fit(X_train, y_train)
     lasso_best_alpha = lasso_cv.alpha_
     lasso001=Lasso(alpha=lasso_best_alpha).fit(X_train,y_train)
-    print(n+'evo相关系数非零个数为：',np.sum(lasso001.coef_ != 0))
-    mask = lasso001.coef_ != 0  #返回一个相关系数是否为零的布尔数组
+    print(n+'The number of evo genes with non-zero correlation coefficients is：',np.sum(lasso001.coef_ != 0))
+    mask = lasso001.coef_ != 0
     new_reg_data = x.iloc[:, mask]
     dic = {'feature': x.columns, 'coefficient': lasso001.coef_}
     df = pd.DataFrame(dic)
@@ -46,8 +46,8 @@ def cancer_LASSO(n,g):
         lasso_best_alpha = lasso_cv.alpha_
         print(lasso_best_alpha)
         lasso001=Lasso(alpha=lasso_best_alpha).fit(X_train,y_train)
-        print(n+'nonevo相关系数非零个数为：',np.sum(lasso001.coef_ != 0))
-        mask = lasso001.coef_ != 0  #返回一个相关系数是否为零的布尔数组
+        print(n+'The number of non-evo genes with non-zero correlation coefficients is：',np.sum(lasso001.coef_ != 0))
+        mask = lasso001.coef_ != 0
         new_reg_data = ran.iloc[:, mask]
         dic = {'feature': ran.columns, 'coefficient': lasso001.coef_}
         df = pd.DataFrame(dic)
